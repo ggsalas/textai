@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+/* Custom theme overrides */
+@theme {
+  --color-primary: #3b82f6;
+  --color-primary-dark: #2563eb;
+  --color-surface: #1e293b;
+  --color-surface-light: #334155;
+  --color-background: #0f172a;
+}
+
+body {
+  @apply bg-background text-white min-h-screen;
+}
