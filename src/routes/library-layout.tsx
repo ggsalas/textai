@@ -1,9 +1,24 @@
+import { useEffect } from 'react'
 import { Outlet, NavLink, useParams } from 'react-router'
 import { useLibrary } from '@/hooks/useLibrary'
+import { hasIndex, rebuildIndex } from '@/services/embedding/vector-store'
+import { db } from '@/services/db'
 
 export function LibraryLayout() {
   const { libraryId } = useParams<{ libraryId: string }>()
   const { library, loading } = useLibrary(libraryId!)
+
+  // Rehidratar índice Orama si no está en memoria
+  useEffect(() => {
+    async function hydrateIndex() {
+      if (!libraryId || hasIndex(libraryId)) return
+      const chunks = await db.chunks.where('libraryId').equals(libraryId).toArray()
+      if (chunks.length > 0) {
+        await rebuildIndex(libraryId, chunks)
+      }
+    }
+    hydrateIndex()
+  }, [libraryId])
 
   return (
     <div>

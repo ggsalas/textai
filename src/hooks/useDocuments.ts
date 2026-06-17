@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { DocumentMeta } from '@/types/document'
 import * as documentService from '@/services/document.service'
+import { ingestMultipleDocuments } from '@/services/ingest/ingest.service'
 
 export function useDocuments(libraryId: string) {
   const [documents, setDocuments] = useState<DocumentMeta[]>([])
@@ -22,6 +23,14 @@ export function useDocuments(libraryId: string) {
     loadDocuments()
   }, [loadDocuments])
 
+  const uploadFiles = useCallback(
+    async (files: File[]) => {
+      await ingestMultipleDocuments(files, libraryId)
+      await loadDocuments()
+    },
+    [libraryId, loadDocuments]
+  )
+
   const deleteDocument = useCallback(
     async (id: string) => {
       await documentService.deleteDocument(id)
@@ -33,6 +42,8 @@ export function useDocuments(libraryId: string) {
   return {
     documents,
     loading,
+    uploadFiles,
     deleteDocument,
+    refresh: loadDocuments,
   }
 }

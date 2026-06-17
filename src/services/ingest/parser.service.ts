@@ -1,0 +1,23 @@
+import { getParserWorker } from '@/workers/worker-api'
+import type { ParseResult } from '@/workers/parser.worker'
+
+export async function parseFile(file: File): Promise<ParseResult> {
+  const worker = getParserWorker()
+
+  if (file.name.endsWith('.pdf') || file.type === 'application/pdf') {
+    const buffer = await file.arrayBuffer()
+    return worker.parsePdf(buffer)
+  }
+
+  if (
+    file.name.endsWith('.docx') ||
+    file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ) {
+    const buffer = await file.arrayBuffer()
+    return worker.parseDocx(buffer)
+  }
+
+  // TXT, MD, y cualquier otro tipo de texto
+  const text = await file.text()
+  return worker.parseText(text)
+}
