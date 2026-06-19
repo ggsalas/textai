@@ -1,49 +1,32 @@
-import { useState, useEffect, useCallback } from 'react'
-import type { DocumentMeta } from '@/types/document'
+import { useCallback } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
+import { db } from '@/services/db'
 import * as documentService from '@/services/document.service'
-import { ingestMultipleDocuments } from '@/services/ingest/ingest.service'
+import { ingestDocuments } from '@/services/ingest/ingest.service'
 
 export function useDocuments(libraryId: string) {
-  const [documents, setDocuments] = useState<DocumentMeta[]>([])
-  const [loading, setLoading] = useState(true)
+  const documents = useLiveQuery(
+    () => db.documents.where('libraryId').equals(libraryId).reverse().sortBy('createdAt'),
+    [libraryId]
+  )
 
-  const loadDocuments = useCallback(async () => {
-    setLoading(true)
-    try {
-      const data = await documentService.getDocumentsByLibrary(libraryId)
-      setDocuments(data)
-    } catch (error) {
-      console.error('Failed to load documents:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [libraryId])
-
-  useEffect(() => {
-    loadDocuments()
-  }, [loadDocuments])
+  const loading = documents === undefined
 
   const uploadFiles = useCallback(
     async (files: File[]) => {
-      await ingestMultipleDocuments(files, libraryId)
-      await loadDocuments()
+      await ingestDocuments(files, libraryId)
     },
-    [libraryId, loadDocuments]
+    [libraryId]
   )
 
-  const deleteDocument = useCallback(
-    async (id: string) => {
-      await documentService.deleteDocument(id)
-      await loadDocuments()
-    },
-    [loadDocuments]
-  )
+  const deleteDocument = useCallback(async (id: string) => {
+    await documentService.deleteDocument(id)
+  }, [])
 
   return {
-    documents,
+    documents: documents ?? [],
     loading,
     uploadFiles,
     deleteDocument,
-    refresh: loadDocuments,
   }
 }

@@ -17,7 +17,7 @@ export async function parseFile(file: File): Promise<ParseResult> {
     return worker.parseDocx(buffer)
   }
 
-  // TXT, MD, y cualquier otro tipo de texto
+  // TXT, MD, and any other text-based format
   const text = await file.text()
   return worker.parseText(text)
 }

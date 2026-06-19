@@ -2,7 +2,7 @@ import { expose } from 'comlink'
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist'
 import { extractRawText } from 'mammoth'
 
-// Configurar pdfjs worker
+// Configure pdfjs worker
 GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url
@@ -10,7 +10,7 @@ GlobalWorkerOptions.workerSrc = new URL(
 
 export interface ParseResult {
   text: string
-  pages?: string[] // solo para PDF
+  pages?: string[] // only for PDF
 }
 
 export interface ParserWorkerAPI {

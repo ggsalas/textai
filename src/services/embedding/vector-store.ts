@@ -85,7 +85,6 @@ export async function removeByDocumentId(libraryId: string, documentId: string):
   const index = indexes.get(libraryId)
   if (!index) return
 
-  // Buscar y eliminar todos los chunks del documento
   const results = await search(index, {
     mode: 'fulltext',
     term: documentId,
@@ -99,7 +98,6 @@ export async function removeByDocumentId(libraryId: string, documentId: string):
 }
 
 export async function rebuildIndex(libraryId: string, chunks: Chunk[]): Promise<void> {
-  // Eliminar índice existente y recrear
   indexes.delete(libraryId)
   if (chunks.length > 0) {
     await insertChunks(libraryId, chunks)

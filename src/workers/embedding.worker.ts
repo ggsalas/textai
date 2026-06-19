@@ -40,7 +40,7 @@ async function generateEmbedding(text: string): Promise<number[]> {
 async function generateEmbeddings(texts: string[]): Promise<number[][]> {
   if (!extractor) throw new Error('Model not loaded')
   const results: number[][] = []
-  // Procesar en batches de 8 para no saturar memoria
+  // Process in batches of 8 to avoid memory overflow
   const BATCH_SIZE = 8
   for (let i = 0; i < texts.length; i += BATCH_SIZE) {
     const batch = texts.slice(i, i + BATCH_SIZE)

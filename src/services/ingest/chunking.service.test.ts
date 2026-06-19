@@ -24,9 +24,9 @@ describe('chunking.service', () => {
     it('should respect chunk size limit', () => {
       const text = 'word '.repeat(200)
       const chunks = chunkText(text, { size: 300, overlap: 50 })
-      // Cada chunk debería estar cerca del tamaño máximo (con algo de tolerancia por corte en palabras)
+      // Each chunk should be near max size (with some tolerance for word boundaries)
       for (const chunk of chunks) {
-        expect(chunk.text.length).toBeLessThanOrEqual(350) // tolerancia
+        expect(chunk.text.length).toBeLessThanOrEqual(350)
       }
     })
 

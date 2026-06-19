@@ -18,7 +18,7 @@ export function chunkText(text: string, options?: ChunkOptions): ChunkData[] {
 
   if (!text.trim()) return chunks
 
-  // Dividir por párrafos primero
+  // Split by paragraphs first
   const paragraphs = text.split(/\n\s*\n/)
   let currentChunk = ''
   let chunkIndex = 0
@@ -27,12 +27,12 @@ export function chunkText(text: string, options?: ChunkOptions): ChunkData[] {
     const trimmed = paragraph.trim()
     if (!trimmed) continue
 
-    // Si agregar este párrafo excede el tamaño, cerrar chunk actual
+    // If adding this paragraph exceeds size limit, close current chunk
     if (currentChunk.length + trimmed.length + 1 > size && currentChunk.length > 0) {
       chunks.push({ text: currentChunk.trim(), chunkIndex })
       chunkIndex++
 
-      // Overlap: mantener las últimas `overlap` chars del chunk anterior
+      // Overlap: keep the last `overlap` chars from the previous chunk
       if (overlap > 0 && currentChunk.length > overlap) {
         currentChunk = currentChunk.slice(-overlap) + ' ' + trimmed
       } else {
@@ -42,7 +42,7 @@ export function chunkText(text: string, options?: ChunkOptions): ChunkData[] {
       currentChunk = currentChunk ? currentChunk + '\n\n' + trimmed : trimmed
     }
 
-    // Si un solo párrafo excede el tamaño, dividirlo por oraciones
+    // If a single paragraph exceeds size, split by sentences
     while (currentChunk.length > size) {
       const breakPoint = findBreakPoint(currentChunk, size)
       chunks.push({ text: currentChunk.slice(0, breakPoint).trim(), chunkIndex })
@@ -53,7 +53,6 @@ export function chunkText(text: string, options?: ChunkOptions): ChunkData[] {
     }
   }
 
-  // Último chunk
   if (currentChunk.trim()) {
     chunks.push({ text: currentChunk.trim(), chunkIndex })
   }
@@ -61,7 +60,7 @@ export function chunkText(text: string, options?: ChunkOptions): ChunkData[] {
   return chunks
 }
 
-/** Con páginas (para PDF): divide texto ya separado por páginas */
+/** With pages (for PDF): chunk text already split by pages */
 export function chunkTextWithPages(pages: string[], options?: ChunkOptions): ChunkData[] {
   const size = options?.size ?? CHUNK_SIZE
   const overlap = options?.overlap ?? CHUNK_OVERLAP
@@ -99,7 +98,7 @@ export function chunkTextWithPages(pages: string[], options?: ChunkOptions): Chu
 }
 
 function findBreakPoint(text: string, maxLength: number): number {
-  // Buscar fin de oración antes del límite
+  // Look for sentence boundary before the limit
   const sub = text.slice(0, maxLength)
   const lastPeriod = sub.lastIndexOf('. ')
   if (lastPeriod > maxLength * 0.5) return lastPeriod + 2

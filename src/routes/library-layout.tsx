@@ -8,7 +8,7 @@ export function LibraryLayout() {
   const { libraryId } = useParams<{ libraryId: string }>()
   const { library, loading } = useLibrary(libraryId!)
 
-  // Rehidratar índice Orama si no está en memoria
+  // Rehydrate Orama index if not in memory
   useEffect(() => {
     async function hydrateIndex() {
       if (!libraryId || hasIndex(libraryId)) return

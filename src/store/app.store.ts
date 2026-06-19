@@ -6,6 +6,7 @@ export interface ProcessingItem {
   documentId: string
   libraryId: string
   progress: number // 0-100
+  totalFiles: number
 }
 
 export interface AppState {
@@ -18,9 +19,9 @@ export interface AppState {
   }
   // Actions
   setModelStatus: (status: ModelStatus) => void
-  addToQueue: (item: Omit<ProcessingItem, 'progress'>) => void
+  addBatchToQueue: (items: Array<Omit<ProcessingItem, 'progress' | 'totalFiles'>>, totalFiles: number) => void
   updateProgress: (documentId: string, progress: number) => void
-  removeFromQueue: (documentId: string) => void
+  removeBatchFromQueue: (documentIds: string[]) => void
   setStats: (stats: Partial<AppState['stats']>) => void
 }
 
@@ -35,9 +36,12 @@ export const useAppStore = create<AppState>((set) => ({
 
   setModelStatus: (status) => set({ modelStatus: status }),
 
-  addToQueue: (item) =>
+  addBatchToQueue: (items, totalFiles) =>
     set((state) => ({
-      processingQueue: [...state.processingQueue, { ...item, progress: 0 }],
+      processingQueue: [
+        ...state.processingQueue,
+        ...items.map((item) => ({ ...item, progress: 0, totalFiles })),
+      ],
     })),
 
   updateProgress: (documentId, progress) =>
@@ -47,9 +51,11 @@ export const useAppStore = create<AppState>((set) => ({
       ),
     })),
 
-  removeFromQueue: (documentId) =>
+  removeBatchFromQueue: (documentIds) =>
     set((state) => ({
-      processingQueue: state.processingQueue.filter((item) => item.documentId !== documentId),
+      processingQueue: state.processingQueue.filter(
+        (item) => !documentIds.includes(item.documentId)
+      ),
     })),
 
   setStats: (stats) =>

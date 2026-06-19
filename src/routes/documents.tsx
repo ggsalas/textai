@@ -2,7 +2,6 @@ import { useParams } from 'react-router'
 import { useDocuments } from '@/hooks/useDocuments'
 import { DocumentList } from '@/components/documents/DocumentList'
 import { DropZone } from '@/components/documents/DropZone'
-import { ProcessingStatus } from '@/components/documents/ProcessingStatus'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { useAppStore } from '@/store/app.store'
 
@@ -35,8 +34,6 @@ export function DocumentsPage() {
           Loading embedding model... Documents can be uploaded once the model is ready.
         </p>
       )}
-
-      <ProcessingStatus libraryId={libraryId!} />
 
       {documents.length === 0 ? (
         <EmptyState
