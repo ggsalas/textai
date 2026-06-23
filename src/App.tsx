@@ -1,19 +1,21 @@
 import { useEffect } from 'react'
 import { createBrowserRouter, Navigate, RouterProvider } from 'react-router'
-import { RootLayout } from '@/routes/root'
-import { LibrariesPage } from '@/routes/libraries'
-import { LibraryLayout } from '@/routes/library-layout'
+import { Toaster } from 'sonner'
+import { SidebarLayout } from '@/routes/sidebar-layout'
+import { LibraryRedirect } from '@/routes/library-redirect'
 import { DocumentsPage } from '@/routes/documents'
 import { SearchPage } from '@/routes/search'
 import { DocumentViewerPage } from '@/routes/document-viewer'
 import { cleanupInterruptedDocuments } from '@/services/document.service'
 import { useBeforeUnload } from '@/hooks/useBeforeUnload'
 import { useProcessingDocuments } from '@/hooks/useProcessingDocuments'
+import { useModelStatus } from '@/hooks/useModelStatus'
+import { useProcessingNotifications } from '@/hooks/useProcessingNotifications'
 
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <RootLayout />,
+    element: <SidebarLayout />,
     children: [
       {
         index: true,
@@ -21,29 +23,23 @@ const router = createBrowserRouter([
       },
       {
         path: 'libraries',
-        element: <LibrariesPage />,
+        element: <LibraryRedirect />,
       },
       {
         path: 'libraries/:libraryId',
-        element: <LibraryLayout />,
-        children: [
-          {
-            index: true,
-            element: <Navigate to="documents" replace />,
-          },
-          {
-            path: 'documents',
-            element: <DocumentsPage />,
-          },
-          {
-            path: 'documents/:documentId',
-            element: <DocumentViewerPage />,
-          },
-          {
-            path: 'search',
-            element: <SearchPage />,
-          },
-        ],
+        element: <LibraryRedirect />,
+      },
+      {
+        path: 'libraries/:libraryId/documents',
+        element: <DocumentsPage />,
+      },
+      {
+        path: 'libraries/:libraryId/documents/:documentId',
+        element: <DocumentViewerPage />,
+      },
+      {
+        path: 'libraries/:libraryId/search',
+        element: <SearchPage />,
       },
     ],
   },
@@ -51,6 +47,10 @@ const router = createBrowserRouter([
 
 export function App() {
   const hasProcessingDocuments = useProcessingDocuments()
+
+  // Initialize model status and processing notifications
+  useModelStatus()
+  useProcessingNotifications()
 
   // Warn user before leaving if documents are being processed
   useBeforeUnload(
@@ -74,5 +74,10 @@ export function App() {
       })
   }, [])
 
-  return <RouterProvider router={router} />
+  return (
+    <>
+      <Toaster />
+      <RouterProvider router={router} />
+    </>
+  )
 }

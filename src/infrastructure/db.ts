@@ -14,7 +14,7 @@ export class TextAIDatabase extends Dexie {
     this.version(1).stores({
       libraries: 'id, name, createdAt',
       documents:
-        'id, libraryId, name, status, createdAt, [libraryId+createdAt]',
+        'id, libraryId, name, status, createdAt, [libraryId+createdAt], [libraryId+status]',
       chunks: 'id, libraryId, documentId, chunkIndex, [libraryId+documentId]',
       documentContents: 'documentId, libraryId',
     })

@@ -1,58 +1,71 @@
-import { useOutletContext } from 'react-router'
+import { useParams, useSearchParams, useLocation } from 'react-router'
 import { useAppStore } from '@/store/app.store'
+import { useSearch } from '@/hooks/useSearch'
+import { useOramaHydration } from '@/hooks/useOramaHydration'
 import { SearchBar } from '@/components/search/SearchBar'
 import { ResultList } from '@/components/search/ResultList'
 import { HybridWeightsControl } from '@/components/search/HybridWeightsControl'
-import type { SearchResult, HybridWeights } from '@/types/search'
-
-interface SearchContext {
-  searchQuery: string
-  searchResults: SearchResult[]
-  isSearching: boolean
-  searchError: string | null
-  hasSearched: boolean
-  performSearch: (query: string) => Promise<void>
-  clearSearch: () => void
-  hybridWeights: HybridWeights
-  setHybridWeights: (weights: HybridWeights) => void
-}
+import { MainPanel } from '@/components/sidebar/MainPanel'
 
 export function SearchPage() {
+  const { libraryId } = useParams<{ libraryId: string }>()
+  const modelStatus = useAppStore((s) => s.modelStatus)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const location = useLocation()
+
+  useOramaHydration(libraryId)
+
+  // Get initial query from URL or location state (when returning from document viewer)
+  const stateQuery = (location.state as { searchQuery?: string })?.searchQuery
+  const initialQuery = searchParams.get('q') || stateQuery || ''
+
   const {
-    searchResults,
+    results,
     isSearching,
-    searchError,
+    error,
     hasSearched,
-    performSearch,
+    search: performSearch,
     hybridWeights,
     setHybridWeights,
-  } = useOutletContext<SearchContext>()
-  const modelStatus = useAppStore((s) => s.modelStatus)
+  } = useSearch(libraryId!, initialQuery)
+
+  // Wrapper to update URL when searching
+  const handleSearch = (query: string) => {
+    performSearch(query)
+
+    // Update URL search params
+    if (query.trim()) {
+      setSearchParams({ q: query })
+    } else {
+      setSearchParams({})
+    }
+  }
 
   return (
-    <div>
-      <SearchBar
-        onSearch={performSearch}
-        isSearching={isSearching}
-        modelStatus={modelStatus}
-      />
-
-      <div className="mt-4">
-        <HybridWeightsControl
-          weights={hybridWeights}
-          onChange={setHybridWeights}
-          disabled={isSearching || modelStatus !== 'ready'}
-        />
-      </div>
-
-      <div className="mt-6">
-        <ResultList
-          results={searchResults}
+    <MainPanel>
+      <div className="flex-1 overflow-y-auto p-6">
+        <SearchBar
+          onSearch={handleSearch}
           isSearching={isSearching}
-          hasSearched={hasSearched}
-          error={searchError}
+          modelStatus={modelStatus}
+          initialQuery={initialQuery}
         />
+        <div className="mt-4">
+          <HybridWeightsControl
+            weights={hybridWeights}
+            onChange={setHybridWeights}
+            disabled={isSearching || modelStatus !== 'ready'}
+          />
+        </div>
+        <div className="mt-6">
+          <ResultList
+            results={results}
+            isSearching={isSearching}
+            hasSearched={hasSearched}
+            error={error}
+          />
+        </div>
       </div>
-    </div>
+    </MainPanel>
   )
 }

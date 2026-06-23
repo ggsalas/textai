@@ -1,10 +1,18 @@
 import { useEffect, useState, useRef } from 'react'
-import { useParams, useSearchParams } from 'react-router'
+import {
+  useParams,
+  useSearchParams,
+  useLocation,
+  useNavigate,
+  Link,
+} from 'react-router'
 import {
   getDocumentContent,
   getDocumentById,
 } from '@/services/document.service'
 import { useChunkData } from '@/hooks/data/useChunkData'
+import { useDocumentActions } from '@/hooks/useDocumentActions'
+import { MainPanel } from '@/components/sidebar/MainPanel'
 import type { DocumentContent, DocumentMeta } from '@/types/document'
 
 export function DocumentViewerPage() {
@@ -13,11 +21,19 @@ export function DocumentViewerPage() {
     documentId: string
   }>()
   const [searchParams] = useSearchParams()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [content, setContent] = useState<DocumentContent | null>(null)
   const [document, setDocument] = useState<DocumentMeta | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const highlightRef = useRef<HTMLElement>(null)
+
+  const { deleteDocument } = useDocumentActions()
+
+  // Get search query from location state (passed from ResultCard)
+  const searchQuery = (location.state as { searchQuery?: string })?.searchQuery
 
   const highlightChunkIndex = searchParams.get('chunk')
     ? parseInt(searchParams.get('chunk')!, 10)
@@ -40,18 +56,16 @@ export function DocumentViewerPage() {
           getDocumentById(documentId),
         ])
 
-        if (!docContent) {
-          setError('Document content not found')
-          return
-        }
-
         if (!docMeta) {
           setError('Document metadata not found')
           return
         }
 
-        setContent(docContent)
+        // Always set document metadata (even if content not available yet)
         setDocument(docMeta)
+
+        // Set content (null if not available for documents in queue or with errors)
+        setContent(docContent || null)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load document')
       } finally {
@@ -72,53 +86,154 @@ export function DocumentViewerPage() {
     }
   }, [isLoading, chunkText])
 
+  // Handle delete confirmation timeout
+  useEffect(() => {
+    if (confirmDelete) {
+      const timer = setTimeout(() => setConfirmDelete(false), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [confirmDelete])
+
+  // Handle delete action
+  const handleDelete = async () => {
+    if (!confirmDelete) {
+      setConfirmDelete(true)
+      return
+    }
+
+    await deleteDocument(documentId!)
+
+    // Navigate back to search after deletion
+    const backToSearchUrl = searchQuery
+      ? `/libraries/${libraryId}/search?q=${encodeURIComponent(searchQuery)}`
+      : `/libraries/${libraryId}/search`
+
+    navigate(backToSearchUrl, { state: { searchQuery } })
+  }
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading document...</div>
-      </div>
+      <MainPanel>
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-500">Loading document...</div>
+        </div>
+      </MainPanel>
     )
   }
 
   if (error) {
     return (
-      <div className="p-4">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-red-800">{error}</p>
+      <MainPanel>
+        <div className="p-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-800">{error}</p>
+          </div>
         </div>
-      </div>
+      </MainPanel>
     )
   }
 
-  if (!content || !document) {
+  // Document not found
+  if (!document) {
     return null
   }
 
+  // Build back link URL
+  const backToSearchUrl = searchQuery
+    ? `/libraries/${libraryId}/search?q=${encodeURIComponent(searchQuery)}`
+    : `/libraries/${libraryId}/search`
+
+  // Status badge color based on document status
+  const statusColor = {
+    pending: 'bg-yellow-100 text-yellow-800',
+    parsing: 'bg-blue-100 text-blue-800',
+    chunking: 'bg-blue-100 text-blue-800',
+    embedding: 'bg-blue-100 text-blue-800',
+    indexed: 'bg-green-100 text-green-800',
+    error: 'bg-red-100 text-red-800',
+  }[document.status]
+
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="mb-6 pb-4 border-b border-gray-200">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {document.name}
-          </h1>
-          <div className="flex items-center gap-4 text-sm text-gray-500">
-            <span>Type: {document.type.toUpperCase()}</span>
-            <span>•</span>
-            <span>Size: {(document.size / 1024).toFixed(2)} KB</span>
-            <span>•</span>
-            <span>Chunks: {document.chunkCount}</span>
+    <MainPanel>
+      <div className="flex-1 overflow-y-auto">
+        {/* Sticky header with back button and document title */}
+        <div className="sticky top-0 z-10 bg-white shadow-sm transition-shadow">
+          <div className="max-w-5xl mx-auto px-6 py-4">
+            {/* Top row: Back link and actions */}
+            <div className="flex items-center justify-between mb-3">
+              <Link
+                to={backToSearchUrl}
+                state={{ searchQuery }}
+                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800"
+              >
+                ← Back to search
+              </Link>
+
+              <div className="flex items-center gap-3">
+                {/* Status indicator */}
+                <span
+                  className={`px-2 py-1 text-xs font-medium rounded ${statusColor}`}
+                >
+                  {document.status}
+                </span>
+
+                {/* Delete button */}
+                <button
+                  onClick={handleDelete}
+                  className={`w-auto  h-6 px-2 rounded flex items-center justify-center text-sm transition-colors ${
+                    confirmDelete
+                      ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                  title={
+                    confirmDelete ? 'Click again to confirm' : 'Delete document'
+                  }
+                >
+                  {confirmDelete ? '✓ Confirm delete' : '×'}
+                </button>
+              </div>
+            </div>
+
+            {/* Document title */}
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              {document.name}
+            </h1>
+
+            {/* Document metadata */}
+            <div className="flex items-center gap-4 text-sm text-gray-500">
+              <span>Type: {document.type.toUpperCase()}</span>
+              <span>•</span>
+              <span>Size: {(document.size / 1024).toFixed(2)} KB</span>
+              <span>•</span>
+              <span>Chunks: {document.chunkCount}</span>
+            </div>
           </div>
         </div>
 
-        <div className="prose max-w-none">
-          <HighlightedText
-            text={content.text}
-            highlight={chunkText}
-            highlightRef={highlightRef}
-          />
+        {/* Document content or processing state */}
+        <div className="max-w-5xl mx-auto px-6 py-6">
+          {content ? (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="prose max-w-none">
+                <HighlightedText
+                  text={content.text}
+                  highlight={chunkText}
+                  highlightRef={highlightRef}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="text-center text-gray-500">
+                {document.status === 'error'
+                  ? 'Document processing failed'
+                  : 'Document is being processed...'}
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </MainPanel>
   )
 }
 
