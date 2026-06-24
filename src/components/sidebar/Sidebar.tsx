@@ -26,6 +26,7 @@ export function Sidebar() {
   }
 
   const handleDocumentClick = (libraryId: string, documentId: string) => {
+    debugger
     navigate(`/libraries/${libraryId}/documents/${documentId}`)
   }
 
@@ -37,9 +38,14 @@ export function Sidebar() {
     }
   }
 
+  const handleCreateLibrarySuccess = (libraryId: string) => {
+    setShowCreateForm(false)
+    setExpandedLibraryId(libraryId)
+    navigate(`/libraries/${libraryId}`)
+  }
+
   return (
     <>
-      {/* Header */}
       <div className="h-16 flex items-center justify-between px-4 py-3 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">Libraries</h2>
         <button
@@ -51,12 +57,13 @@ export function Sidebar() {
         </button>
       </div>
 
-      {/* Create form */}
       {showCreateForm && (
-        <CreateLibraryForm onSuccess={() => setShowCreateForm(false)} />
+        <CreateLibraryForm
+          onSuccess={handleCreateLibrarySuccess}
+          onClose={() => setShowCreateForm(false)}
+        />
       )}
 
-      {/* Library list */}
       <div className="flex-1 overflow-y-auto">
         {loading && (
           <div className="p-4 text-sm text-gray-500">Loading libraries...</div>

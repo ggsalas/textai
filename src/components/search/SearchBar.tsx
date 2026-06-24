@@ -1,40 +1,53 @@
-import { useState, useCallback, useRef, useEffect, type FormEvent } from 'react'
+import {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  type FormEvent,
+  type ChangeEvent,
+} from 'react'
 import type { ModelStatus } from '@/store/app.store'
+import type { HybridWeights } from '@/types/search'
 
 interface SearchBarProps {
   onSearch: (query: string) => void
-  isSearching: boolean // not used because the search is really fast
+  isSearching: boolean
   modelStatus: ModelStatus
   initialQuery?: string
+  hybridWeights?: HybridWeights
+  onWeightsChange?: (weights: HybridWeights) => void
 }
 
 export function SearchBar({
   onSearch,
   modelStatus,
   initialQuery = '',
+  hybridWeights,
+  onWeightsChange,
 }: SearchBarProps) {
   const [inputValue, setInputValue] = useState(initialQuery)
+  const [localWeight, setLocalWeight] = useState(hybridWeights?.vector ?? 0.5)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Focus the input on mount
   useEffect(() => {
     inputRef.current?.focus()
   }, [])
 
-  // Clean up debounce timer
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
   }, [])
 
+  useEffect(() => {
+    if (hybridWeights !== undefined) setLocalWeight(hybridWeights.vector)
+  }, [hybridWeights?.vector])
+
   const debouncedSearch = useCallback(
     (value: string) => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
-      debounceRef.current = setTimeout(() => {
-        onSearch(value)
-      }, 300)
+      debounceRef.current = setTimeout(() => onSearch(value), 300)
     },
     [onSearch],
   )
@@ -56,73 +69,118 @@ export function SearchBar({
     inputRef.current?.focus()
   }
 
+  const handleSliderChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setLocalWeight(parseFloat(e.target.value))
+  }
+
+  const handleSliderRelease = () => {
+    onWeightsChange?.({ vector: localWeight, text: 1 - localWeight })
+  }
+
   const isDisabled = modelStatus !== 'ready'
   const hasActiveSearch = inputValue.trim().length > 0
+  const showWeights = hybridWeights !== undefined && onWeightsChange !== undefined
 
   return (
-    <form onSubmit={handleSubmit} className="relative">
-      <input
-        ref={inputRef}
-        type="text"
-        value={inputValue}
-        onChange={(e) => handleChange(e.target.value)}
-        placeholder={
-          isDisabled
-            ? 'Waiting for embedding model to load...'
-            : 'Search your documents...'
-        }
-        disabled={isDisabled}
-        className={`
-          w-full rounded-lg border px-4 py-3 pr-10
-          text-gray-900 placeholder-gray-500
-          focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20
-          disabled:opacity-50 disabled:cursor-not-allowed
-          ${isDisabled ? 'bg-gray-100 border-gray-200' : 'bg-white border-gray-300'}
-        `}
-      />
+    <div>
+      <div className="group relative">
+        {/*
+          Invisible placeholder: same padding as the input row, stays in normal
+          flow so content below is anchored to input height only — never shifts.
+        */}
+        <div
+          className="invisible pointer-events-none select-none border border-transparent px-4 py-3 text-base"
+          aria-hidden="true"
+        >
+          &nbsp;
+        </div>
 
-      {/* Loading spinner, clear button, or search icon */}
-      <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-        {hasActiveSearch ? (
-          // Clear button (X) when there's an active search
-          <button
-            type="button"
-            onClick={handleClear}
-            className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors"
-            aria-label="Clear search"
-          >
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        ) : (
-          // Search icon when input is empty
-          <svg
-            className="h-5 w-5 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+        {/*
+          Actual search box: absolutely positioned over the placeholder.
+          Expands downward on focus (slider appears inside the border),
+          covering content below — intentional overlay, no layout shift.
+        */}
+        <div
+          className={`
+            absolute inset-x-0 top-0 z-10 rounded-lg border bg-white
+            focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20
+            ${isDisabled ? 'border-gray-200 bg-gray-100' : 'border-gray-300'}
+          `}
+        >
+          <form onSubmit={handleSubmit} className="flex items-center gap-2 px-4 py-3">
+            <input
+              ref={inputRef}
+              type="text"
+              value={inputValue}
+              onChange={(e) => handleChange(e.target.value)}
+              placeholder={
+                isDisabled
+                  ? 'Waiting for embedding model to load...'
+                  : 'Search your documents...'
+              }
+              disabled={isDisabled}
+              className="flex-1 min-w-0 bg-transparent outline-none text-gray-900 placeholder-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
-          </svg>
-        )}
+
+            {hasActiveSearch ? (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="shrink-0 h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label="Clear search"
+              >
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            ) : (
+              <svg
+                className="shrink-0 h-5 w-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            )}
+          </form>
+
+          {showWeights && (
+            <div className="hidden group-focus-within:block border-t border-gray-200 px-4 py-3">
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-gray-500 whitespace-nowrap">Keyword</span>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={localWeight}
+                  onChange={handleSliderChange}
+                  onMouseUp={handleSliderRelease}
+                  onTouchEnd={handleSliderRelease}
+                  disabled={isDisabled}
+                  className="flex-1 h-1.5 accent-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <span className="text-xs text-gray-500 whitespace-nowrap">Semantic</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Model status message */}
       {modelStatus === 'loading' && (
         <p className="mt-2 text-sm text-yellow-600">
-          Loading embedding model... Search will be available once the model is
-          ready.
+          Loading embedding model... Search will be available once the model is ready.
         </p>
       )}
       {modelStatus === 'error' && (
@@ -130,6 +188,6 @@ export function SearchBar({
           Embedding model failed to load. Search is unavailable.
         </p>
       )}
-    </form>
+    </div>
   )
 }

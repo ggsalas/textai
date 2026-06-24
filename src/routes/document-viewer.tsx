@@ -43,6 +43,7 @@ export function DocumentViewerPage() {
   const { chunk } = useChunkData(libraryId, documentId, highlightChunkIndex)
   const chunkText = chunk?.text ?? null
 
+  debugger
   useEffect(() => {
     async function loadDocument() {
       if (!documentId) return

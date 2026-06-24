@@ -1,16 +1,18 @@
 import { useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router'
 import { useLibraryActions } from '@/hooks/useLibraryActions'
 
 interface CreateLibraryFormProps {
-  onSuccess?: () => void
+  onSuccess: (id: string) => void
+  onClose: () => void
 }
 
-export function CreateLibraryForm({ onSuccess }: CreateLibraryFormProps) {
+export function CreateLibraryForm({
+  onSuccess,
+  onClose,
+}: CreateLibraryFormProps) {
   const [name, setName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { createLibrary } = useLibraryActions()
-  const navigate = useNavigate()
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -21,8 +23,7 @@ export function CreateLibraryForm({ onSuccess }: CreateLibraryFormProps) {
     try {
       const library = await createLibrary(trimmedName)
       setName('')
-      onSuccess?.()
-      navigate(`/libraries/${library.id}`)
+      onSuccess(library.id)
     } catch (error) {
       console.error('Failed to create library:', error)
     } finally {
@@ -32,23 +33,33 @@ export function CreateLibraryForm({ onSuccess }: CreateLibraryFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="p-3 border-b border-gray-200">
-      <div className="flex gap-2">
+      <div className="flex flex-col gap-2">
         <input
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Library name"
-          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-black k text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           disabled={isSubmitting}
           autoFocus
         />
-        <button
-          type="submit"
-          disabled={!name.trim() || isSubmitting}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium transition-colors"
-        >
-          Create
-        </button>
+
+        <div className="flex gap-2 justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-black  bg-transparent"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={!name.trim() || isSubmitting}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm font-medium transition-colors"
+          >
+            Create
+          </button>
+        </div>
       </div>
     </form>
   )

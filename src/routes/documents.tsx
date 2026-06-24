@@ -10,7 +10,7 @@ export function DocumentsPage() {
   const modelStatus = useAppStore((s) => s.modelStatus)
 
   return (
-    <MainPanel>
+    <MainPanel noAddDocment>
       <div className="flex-1 flex items-center justify-center p-6">
         <DropZone
           onFiles={(files) => uploadFiles(files)}

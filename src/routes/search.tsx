@@ -4,7 +4,6 @@ import { useSearch } from '@/hooks/useSearch'
 import { useOramaHydration } from '@/hooks/useOramaHydration'
 import { SearchBar } from '@/components/search/SearchBar'
 import { ResultList } from '@/components/search/ResultList'
-import { HybridWeightsControl } from '@/components/search/HybridWeightsControl'
 import { MainPanel } from '@/components/sidebar/MainPanel'
 
 export function SearchPage() {
@@ -49,14 +48,9 @@ export function SearchPage() {
           isSearching={isSearching}
           modelStatus={modelStatus}
           initialQuery={initialQuery}
+          hybridWeights={hybridWeights}
+          onWeightsChange={setHybridWeights}
         />
-        <div className="mt-4">
-          <HybridWeightsControl
-            weights={hybridWeights}
-            onChange={setHybridWeights}
-            disabled={isSearching || modelStatus !== 'ready'}
-          />
-        </div>
         <div className="mt-6">
           <ResultList
             results={results}

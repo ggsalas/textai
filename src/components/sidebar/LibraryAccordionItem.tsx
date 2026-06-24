@@ -20,25 +20,23 @@ export function LibraryAccordionItem({
   const { documents, loading } = useDocumentsData(library.id)
 
   return (
-    <div className="border-b border-gray-200">
-      {/* Library header */}
+    <div
+      className="border-b border-gray-200  cursor-pointer"
+      onClick={onToggle}
+    >
       <div
         className={`flex items-center gap-2 px-3 py-2 hover:bg-gray-100 ${isExpanded ? 'bg-gray-50' : ''}`}
       >
-        <button
-          onClick={onToggle}
-          className="flex-1 flex items-center justify-between gap-2"
-        >
+        <div className="flex-1 flex items-center justify-between gap-2">
           <span className="font-medium text-gray-900 truncate flex-1 text-left">
             {library.name}
           </span>
           <span className="text-gray-400 text-sm">
             {isExpanded ? '▼' : '▲'}
           </span>
-        </button>
+        </div>
       </div>
 
-      {/* Document list (shown when expanded) */}
       {isExpanded && (
         <div className="bg-gray-50">
           {loading && (
