@@ -1,8 +1,8 @@
-# AGENTS.md — TextAI
+# AGENTS.md — RAG
 
 ## Project Overview
 
-TextAI is a PWA that runs 100% in the browser. It provides local semantic document search (RAG) with zero backend and full privacy. Documents never leave the user's device.
+RAG is a PWA that runs 100% in the browser. It provides local semantic document search (RAG) with zero backend and full privacy. Documents never leave the user's device.
 
 Users organize documents into **Libraries**. Each library is an independent collection with its own documents, chunks, embeddings, and vector search index.
 

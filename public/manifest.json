@@ -2,7 +2,7 @@
   "name": "RAG",
   "short_name": "RAG",
   "description": "Local semantic document search",
-  "start_url": "/",
+  "start_url": "/rag/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#1e293b",

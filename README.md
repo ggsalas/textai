@@ -1,10 +1,8 @@
-# TextAI
-
 A privacy-first PWA for semantic document search that runs 100% in the browser. No backend, no data collection—everything stays on your device.
 
 ## Architecture Overview
 
-TextAI follows a **layered architecture** with strict dependency rules to maintain clean separation of concerns.
+RAG follows a **layered architecture** with strict dependency rules to maintain clean separation of concerns.
 
 ### Dependency Flow
 
