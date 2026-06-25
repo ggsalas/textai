@@ -46,10 +46,16 @@ src/
 ### Dependency Direction
 
 ```
-types → lib → infrastructure → services/workers → store/hooks → components → routes
+UI (components, routes)
+        ↓
+  store / hooks
+        ↓
+  services / workers
+        ↓
+  infrastructure
 ```
 
-Never import against this direction. If you need to, refactor instead.
+`types` and `lib` are cross-cutting utilities available to all layers. Never import upward. If you need to, refactor instead.
 
 ### Layer Rules
 
@@ -65,7 +71,28 @@ Never import against this direction. If you need to, refactor instead.
    - Use naming convention: `use[Entity]Data.ts`
    - Be simple queries (filtering, sorting, counting)
    - NOT contain business logic (that goes in business hooks or services)
-   - See `hooks/data/README.md` for detailed rules
+
+   ```ts
+   // hooks/data/useDocumentsData.ts
+   export function useDocumentsData(libraryId: string) {
+     const documents = useLiveQuery(
+       () => db.documents.where('libraryId').equals(libraryId).sortBy('createdAt'),
+       [libraryId],
+     )
+     return { documents: documents ?? [], loading: documents === undefined }
+   }
+   ```
+
+   Business hooks consume data hooks for reactive reads, services for writes:
+
+   ```ts
+   // hooks/useDocuments.ts
+   export function useDocuments(libraryId: string) {
+     const { documents, loading } = useDocumentsData(libraryId) // reactive
+     const deleteDocument = (id: string) => documentService.deleteDocument(id)
+     return { documents, loading, deleteDocument }
+   }
+   ```
 
 5. **`hooks/`** (Business Hooks) MUST NOT import from `infrastructure/db` directly. They should use data hooks from `hooks/data/` for reactive queries and services for write operations.
 
