@@ -16,6 +16,10 @@ interface SearchBarProps {
   initialQuery?: string
   hybridWeights?: HybridWeights
   onWeightsChange?: (weights: HybridWeights) => void
+  maxResults?: number
+  onMaxResultsChange?: (n: number) => void
+  minScore?: number
+  onMinScoreChange?: (n: number) => void
   notFocused?: boolean
 }
 
@@ -25,6 +29,10 @@ export function SearchBar({
   initialQuery = '',
   hybridWeights,
   onWeightsChange,
+  maxResults,
+  onMaxResultsChange,
+  minScore,
+  onMinScoreChange,
   notFocused,
 }: SearchBarProps) {
   const [inputValue, setInputValue] = useState(initialQuery)
@@ -85,6 +93,8 @@ export function SearchBar({
   const hasActiveSearch = inputValue.trim().length > 0
   const showWeights =
     hybridWeights !== undefined && onWeightsChange !== undefined
+  const showConfig =
+    showWeights || (maxResults !== undefined && minScore !== undefined)
 
   return (
     <div>
@@ -163,29 +173,81 @@ export function SearchBar({
             )}
           </form>
 
-          {showWeights && (
+          {showConfig && (
             <div className="grid grid-rows-[0fr] opacity-0 group-focus-within:grid-rows-[1fr] group-focus-within:opacity-100 transition-[grid-template-rows,opacity] duration-200 delay-[150ms] group-focus-within:delay-0">
               <div className="overflow-hidden">
                 <div className="border-t border-gray-200 px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-gray-500 whitespace-nowrap">
-                      Keyword
-                    </span>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={localWeight}
-                      onChange={handleSliderChange}
-                      onMouseUp={handleSliderRelease}
-                      onTouchEnd={handleSliderRelease}
-                      disabled={isDisabled}
-                      className="flex-1 h-1.5 accent-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                    />
-                    <span className="text-xs text-gray-500 whitespace-nowrap">
-                      Semantic
-                    </span>
+                    {showWeights && (
+                      <>
+                        <span className="text-xs text-gray-500 whitespace-nowrap">
+                          Keyword
+                        </span>
+                        <input
+                          type="range"
+                          min="0"
+                          max="1"
+                          step="0.1"
+                          value={localWeight}
+                          onChange={handleSliderChange}
+                          onMouseUp={handleSliderRelease}
+                          onTouchEnd={handleSliderRelease}
+                          disabled={isDisabled}
+                          className="flex-1 h-1.5 accent-blue-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        />
+                        <span className="text-xs text-gray-500 whitespace-nowrap">
+                          Semantic
+                        </span>
+                      </>
+                    )}
+
+                    {maxResults !== undefined && onMaxResultsChange && (
+                      <>
+                        <div className="w-px h-4 bg-gray-200 mx-1" />
+                        <span className="text-xs text-gray-500 whitespace-nowrap">
+                          Max results
+                        </span>
+                        <input
+                          type="number"
+                          min="1"
+                          max="100"
+                          value={maxResults}
+                          onChange={(e) =>
+                            onMaxResultsChange(
+                              Math.max(1, parseInt(e.target.value) || 1),
+                            )
+                          }
+                          disabled={isDisabled}
+                          className="w-12 text-xs text-center border border-gray-200 rounded px-1 py-0.5 outline-none focus:border-blue-500 disabled:opacity-50 text-black"
+                        />
+                      </>
+                    )}
+
+                    {minScore !== undefined && onMinScoreChange && (
+                      <>
+                        <div className="w-px h-4 bg-gray-200 mx-1" />
+                        <span className="text-xs text-gray-500 whitespace-nowrap">
+                          Min score
+                        </span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={minScore}
+                          onChange={(e) =>
+                            onMinScoreChange(
+                              Math.min(
+                                100,
+                                Math.max(0, parseInt(e.target.value) || 0),
+                              ),
+                            )
+                          }
+                          disabled={isDisabled}
+                          className="w-12 text-xs text-center border border-gray-200 rounded px-1 py-0.5 outline-none focus:border-blue-500 disabled:opacity-50 text-black"
+                        />
+                        <span className="text-xs text-gray-400">%</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

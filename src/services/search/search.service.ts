@@ -1,32 +1,30 @@
 import { embed } from '@/services/embedding/embedding.service'
 import { searchHybrid } from '@/services/embedding/vector-store'
-import { DEFAULT_TOP_K } from '@/lib/constants'
+import { DEFAULT_MAX_RESULTS, DEFAULT_MIN_SCORE } from '@/lib/constants'
 import type { SearchResult, HybridWeights } from '@/types/search'
 
 /** Performs hybrid search (BM25 + semantic) within a library */
 export async function search(
   query: string,
   libraryId: string,
-  topK?: number,
+  maxResults?: number,
   weights?: HybridWeights,
+  minScore?: number,
 ): Promise<SearchResult[]> {
   const trimmed = query.trim()
   if (!trimmed) return []
 
-  // 1. Generate embedding for the query
   const embedding = await embed(trimmed)
 
-  // 2. Perform hybrid search (BM25 fulltext + vector similarity)
   const hybridResults = await searchHybrid(
     libraryId,
     trimmed,
     embedding,
-    topK ?? DEFAULT_TOP_K,
+    maxResults ?? DEFAULT_MAX_RESULTS,
     weights,
   )
 
-  // 3. Map VectorSearchResult → SearchResult (same shape, explicit mapping for type safety)
-  return hybridResults.map((r) => ({
+  const results: SearchResult[] = hybridResults.map((r) => ({
     chunkId: r.chunkId,
     documentId: r.documentId,
     documentName: r.documentName,
@@ -35,4 +33,10 @@ export async function search(
     page: r.page,
     chunkIndex: r.chunkIndex,
   }))
+
+  // Filter by relative score threshold: discard results below minScore% of the top result
+  const threshold = minScore ?? DEFAULT_MIN_SCORE
+  if (results.length === 0) return results
+  const topScore = Math.max(...results.map((r) => r.score))
+  return results.filter((r) => r.score >= topScore * (threshold / 100))
 }

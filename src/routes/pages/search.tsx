@@ -31,7 +31,11 @@ export function SearchPage() {
     search: performSearch,
     hybridWeights,
     setHybridWeights,
-  } = useSearch(libraryId!, initialQuery)
+    maxResults,
+    setMaxResults,
+    minScore,
+    setMinScore,
+  } = useSearch(libraryId!, modelStatus === 'ready' ? initialQuery : '')
 
   // Wrapper to update URL when searching
   const handleSearch = (query: string) => {
@@ -55,6 +59,10 @@ export function SearchPage() {
           initialQuery={initialQuery}
           hybridWeights={hybridWeights}
           onWeightsChange={setHybridWeights}
+          maxResults={maxResults}
+          onMaxResultsChange={setMaxResults}
+          minScore={minScore}
+          onMinScoreChange={setMinScore}
           notFocused={!!focusedChunkId}
         />
         <div className="mt-6">

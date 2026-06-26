@@ -1,7 +1,7 @@
 import { create, insert, search, remove, type AnyOrama } from '@orama/orama'
 import type { Chunk } from '@/types/document'
 import type { HybridWeights } from '@/types/search'
-import { EMBEDDING_DIMENSIONS, DEFAULT_TOP_K } from '@/lib/constants'
+import { EMBEDDING_DIMENSIONS, DEFAULT_MAX_RESULTS } from '@/lib/constants'
 
 export interface VectorSearchResult {
   chunkId: string
@@ -74,7 +74,7 @@ export async function searchHybrid(
     term,
     vector: { value: embedding, property: 'embedding' },
     properties: ['text'],
-    limit: topK ?? DEFAULT_TOP_K,
+    limit: topK ?? DEFAULT_MAX_RESULTS,
     includeVectors: false,
     similarity: 0.0,
     hybridWeights: weights ?? { text: 0.5, vector: 0.5 },
@@ -106,7 +106,7 @@ export async function searchByVector(
   const results = await search(index, {
     mode: 'vector',
     vector: { value: embedding, property: 'embedding' },
-    limit: topK ?? DEFAULT_TOP_K,
+    limit: topK ?? DEFAULT_MAX_RESULTS,
     includeVectors: false,
     similarity: 0.0,
   })

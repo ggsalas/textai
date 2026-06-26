@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { search as searchService } from '@/services/search/search.service'
+import { DEFAULT_MAX_RESULTS, DEFAULT_MIN_SCORE } from '@/lib/constants'
 import type { SearchResult, HybridWeights } from '@/types/search'
 
 /** Hook for performing hybrid search within a library */
@@ -9,10 +10,9 @@ export function useSearch(libraryId: string, initialQuery = '') {
   const [isSearching, setIsSearching] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [hasSearched, setHasSearched] = useState(false)
-  const [hybridWeights, setHybridWeights] = useState<HybridWeights>({
-    text: 0.5,
-    vector: 0.5,
-  })
+  const [hybridWeights, setHybridWeights] = useState<HybridWeights>({ text: 0.5, vector: 0.5 })
+  const [maxResults, setMaxResults] = useState(DEFAULT_MAX_RESULTS)
+  const [minScore, setMinScore] = useState(DEFAULT_MIN_SCORE)
   const abortRef = useRef(0)
   const initialSearchDone = useRef(false)
 
@@ -33,14 +33,7 @@ export function useSearch(libraryId: string, initialQuery = '') {
       setError(null)
 
       try {
-        const searchResults = await searchService(
-          trimmed,
-          libraryId,
-          undefined,
-          hybridWeights,
-        )
-
-        // Only update if this is still the latest search
+        const searchResults = await searchService(trimmed, libraryId, maxResults, hybridWeights, minScore)
         if (searchId === abortRef.current) {
           setResults(searchResults)
           setHasSearched(true)
@@ -57,7 +50,7 @@ export function useSearch(libraryId: string, initialQuery = '') {
         }
       }
     },
-    [libraryId, hybridWeights],
+    [libraryId, hybridWeights, maxResults, minScore],
   )
 
   const clearResults = useCallback(() => {
@@ -68,7 +61,6 @@ export function useSearch(libraryId: string, initialQuery = '') {
     abortRef.current++
   }, [])
 
-  // Perform initial search if initialQuery is provided
   useEffect(() => {
     if (initialQuery.trim() && !initialSearchDone.current) {
       initialSearchDone.current = true
@@ -77,13 +69,13 @@ export function useSearch(libraryId: string, initialQuery = '') {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQuery])
 
-  // Re-run search when hybrid weights change (if there's an active query)
+  // Re-run search when search config changes
   useEffect(() => {
     if (query.trim() && hasSearched) {
       performSearch(query)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hybridWeights])
+  }, [hybridWeights, maxResults, minScore])
 
   return {
     query,
@@ -95,5 +87,9 @@ export function useSearch(libraryId: string, initialQuery = '') {
     clearResults,
     hybridWeights,
     setHybridWeights,
+    maxResults,
+    setMaxResults,
+    minScore,
+    setMinScore,
   }
 }

@@ -6,7 +6,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 
 export default defineConfig({
-  base: '/rag/',
+  base: process.env.NODE_ENV === 'production' ? '/rag/' : '/',
   plugins: [
     react(),
     tailwindcss(),
